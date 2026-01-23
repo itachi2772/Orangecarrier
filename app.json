@@ -1,12 +1,12 @@
 {
   "name": "OrangeCarrier Monitor",
-  "description": "Real-time call monitoring system",
+  "description": "Real-time call monitoring",
   "repository": "https://github.com/YOUR_USERNAME/ORANGE_MONITOR",
   "logo": "https://img.icons8.com/color/96/000000/orange.png",
-  "keywords": ["python", "selenium", "telegram", "monitoring"],
+  "keywords": ["python", "selenium", "monitoring"],
   "env": {
     "BOT_TOKEN": {
-      "description": "Telegram Bot Token from @BotFather",
+      "description": "Telegram Bot Token",
       "value": "",
       "required": true
     },
@@ -14,11 +14,6 @@
       "description": "Admin Telegram Chat ID",
       "value": "",
       "required": true
-    },
-    "GROUP_CHAT_ID": {
-      "description": "Group Telegram Chat ID",
-      "value": "",
-      "required": false
     },
     "ORANGE_EMAIL": {
       "description": "Orange Carrier Email",
@@ -28,21 +23,6 @@
     "ORANGE_PASSWORD": {
       "description": "Orange Carrier Password",
       "value": "",
-      "required": true
-    },
-    "LOGIN_URL": {
-      "description": "Orange Carrier Login URL",
-      "value": "https://www.orangecarrier.com/login",
-      "required": true
-    },
-    "CALL_URL": {
-      "description": "Orange Carrier Calls Page URL",
-      "value": "https://www.orangecarrier.com/live/calls",
-      "required": true
-    },
-    "BASE_URL": {
-      "description": "Orange Carrier Base URL",
-      "value": "https://www.orangecarrier.com",
       "required": true
     }
   },
@@ -57,6 +37,5 @@
       "url": "heroku/python"
     }
   ],
-  "addons": [],
   "stack": "heroku-22"
 }
