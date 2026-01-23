@@ -1,1 +1,1 @@
-worker: python main.py
+echo "worker: python oranagemain.py" > Procfile
