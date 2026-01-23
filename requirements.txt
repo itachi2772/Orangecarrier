@@ -1,8 +1,8 @@
-seleniumbase==4.47.0
+seleniumbase
 requests==2.31.0
 phonenumbers==8.13.29
 pycountry==23.12.11
 SpeechRecognition==3.10.1
 pydub==0.25.1
 Pillow==10.2.0
-selenium==4.18.1
+selenium
