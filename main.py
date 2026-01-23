@@ -5,11 +5,11 @@ import os
 import random
 import json
 from datetime import datetime, timedelta
-from seleniumbase import SB
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException, NoSuchElementException
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 import phonenumbers
 from phonenumbers import region_code_for_number
@@ -211,238 +211,243 @@ def extract_otp_from_audio(audio_path):
         print(f"[💥] OTP extraction error: {e}")
         return None
 
-def solve_cloudflare_captcha_advanced(driver):
-    """Advanced CloudFlare CAPTCHA solver with multiple approaches"""
-    try:
-        print("[🛡️] Advanced CloudFlare CAPTCHA solver activated...")
-        
-        # Approach 1: Try to find and click the CAPTCHA iframe
-        try:
-            captcha_iframe = WebDriverWait(driver, 8).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, 
-                    "iframe[src*='challenges.cloudflare.com'], iframe[title*='challenge'], iframe[src*='recaptcha']"))
-            )
-            
-            if captcha_iframe:
-                print("[🔍] CAPTCHA iframe found, attempting auto-completion...")
-                driver.switch_to.frame(captcha_iframe)
-                
-                # Try different CAPTCHA checkbox selectors
-                checkbox_selectors = [
-                    "input[type='checkbox']",
-                    ".recaptcha-checkbox-border",
-                    "#recaptcha-anchor",
-                    ".cf-challenge-checkbox",
-                    ".h-captcha",
-                    ".checkbox"
-                ]
-                
-                for selector in checkbox_selectors:
-                    try:
-                        checkbox = WebDriverWait(driver, 3).until(
-                            EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                        )
-                        if checkbox:
-                            print(f"[✅] CAPTCHA checkbox found with selector: {selector}")
-                            
-                            # Human-like behavior before clicking
-                            human_like_delay(2, 4)
-                            
-                            # Advanced mouse movement simulation
-                            human_like_mouse_movement(driver, checkbox)
-                            
-                            print("[👆] CAPTCHA checkbox clicked, waiting for verification...")
-                            
-                            # Wait for verification process
-                            human_like_delay(8, 12)
-                            
-                            # Check if verification is complete
-                            try:
-                                verified_indicator = driver.find_element(By.CSS_SELECTOR, ".recaptcha-checkbox-checked, .cf-challenge-success")
-                                if verified_indicator:
-                                    print("[🎉] CAPTCHA verification completed automatically!")
-                                    driver.switch_to.default_content()
-                                    return True
-                            except:
-                                pass
-                            
-                            break
-                    except:
-                        continue
-                
-                driver.switch_to.default_content()
-                
-        except TimeoutException:
-            print("[⏱️] No CAPTCHA iframe found with first approach")
-            driver.switch_to.default_content()
-        
-        # Approach 2: Look for challenge form and submit
-        try:
-            challenge_form = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "form[action*='challenge'], .challenge-form"))
-            )
-            
-            if challenge_form:
-                print("[🔍] Challenge form found, looking for submit button...")
-                
-                submit_selectors = [
-                    "input[type='submit']",
-                    "button[type='submit']",
-                    ".btn-success",
-                    ".button--success",
-                    "[type='submit']"
-                ]
-                
-                for selector in submit_selectors:
-                    try:
-                        submit_btn = challenge_form.find_element(By.CSS_SELECTOR, selector)
-                        if submit_btn and submit_btn.is_enabled():
-                            human_like_delay(2, 3)
-                            human_like_mouse_movement(driver, submit_btn)
-                            print("[✅] Challenge form submitted")
-                            human_like_delay(5, 8)
-                            return True
-                    except:
-                        continue
-                        
-        except TimeoutException:
-            print("[⏱️] No challenge form found")
-        
-        # Approach 3: Direct CAPTCHA element detection
-        captcha_elements = driver.find_elements(By.CSS_SELECTOR, 
-            ".cf-captcha, .captcha, .hcaptcha, .g-recaptcha, [data-sitekey]")
-        
-        if captcha_elements:
-            print(f"[🔍] Found {len(captcha_elements)} CAPTCHA elements, attempting interaction...")
-            
-            for element in captcha_elements:
-                try:
-                    if element.is_displayed() and element.is_enabled():
-                        human_like_delay(1, 2)
-                        driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", element)
-                        human_like_delay(1, 2)
-                        human_like_mouse_movement(driver, element)
-                        print("[👆] CAPTCHA element clicked")
-                        human_like_delay(6, 10)
-                        return True
-                except:
-                    continue
-        
-        print("[❌] CAPTCHA auto-completion failed with all approaches")
-        return False
-        
-    except Exception as e:
-        print(f"[💥] Advanced CAPTCHA solver error: {e}")
-        driver.switch_to.default_content()
-        return False
-
-def check_and_solve_captcha(driver):
-    """Check for CAPTCHA and attempt to solve it with enhanced detection"""
-    try:
-        # Enhanced CAPTCHA indicators
-        captcha_indicators = [
-            "challenges.cloudflare.com",
-            "cf-challenge", 
-            "recaptcha",
-            "hcaptcha",
-            "Just a moment",
-            "Checking your browser",
-            "Verifying you are human",
-            "Challenge",
-            "Security check"
-        ]
-        
-        page_source = driver.page_source.lower()
-        current_url = driver.current_url.lower()
-        page_title = driver.title.lower()
-        
-        for indicator in captcha_indicators:
-            indicator_lower = indicator.lower()
-            if (indicator_lower in page_source or 
-                indicator_lower in current_url or 
-                indicator_lower in page_title):
-                print(f"[🛡️] CAPTCHA detected: {indicator}")
-                return solve_cloudflare_captcha_advanced(driver)
-        
-        # Additional check for CAPTCHA elements in DOM
-        captcha_selectors = [
-            ".cf-captcha",
-            ".captcha", 
-            ".hcaptcha",
-            ".g-recaptcha",
-            "[data-sitekey]",
-            "iframe[src*='captcha']",
-            "iframe[src*='challenge']"
-        ]
-        
-        for selector in captcha_selectors:
-            try:
-                if driver.find_elements(By.CSS_SELECTOR, selector):
-                    print(f"[🔍] CAPTCHA element found with selector: {selector}")
-                    return solve_cloudflare_captcha_advanced(driver)
-            except:
-                continue
-                
-        return False
-        
-    except Exception as e:
-        print(f"[❌] Error checking CAPTCHA: {e}")
-        return False
-
-def safe_refresh_with_advanced_captcha(driver):
-    """Safe page refresh with advanced CAPTCHA handling"""
-    max_retries = 2
-    retry_count = 0
+def load_cookies_from_config():
+    """Load cookies from config or environment variable"""
+    cookies_json = None
     
-    while retry_count <= max_retries:
+    try:
+        # Try to get cookies from environment variable
+        cookies_env = os.environ.get('ORANGE_COOKIES')
+        if cookies_env:
+            cookies_json = json.loads(cookies_env)
+            print(f"[🍪] Loaded {len(cookies_json)} cookies from environment")
+            return cookies_json
+        
+        # Try to get from config
+        if hasattr(config, 'ORANGE_COOKIES') and config.ORANGE_COOKIES:
+            cookies_json = config.ORANGE_COOKIES
+            print(f"[🍪] Loaded {len(cookies_json)} cookies from config")
+            return cookies_json
+        
+        # Default cookies (the ones you provided)
+        default_cookies = [
+            {
+                "domain": ".orangecarrier.com",
+                "expirationDate": 1803729122.883909,
+                "hostOnly": False,
+                "httpOnly": False,
+                "name": "_ga",
+                "path": "/",
+                "sameSite": "unspecified",
+                "secure": False,
+                "session": False,
+                "storeId": "0",
+                "value": "GA1.2.1935366298.1768217292"
+            },
+            {
+                "domain": ".orangecarrier.com",
+                "expirationDate": 1776945130,
+                "hostOnly": False,
+                "httpOnly": False,
+                "name": "_fbp",
+                "path": "/",
+                "sameSite": "lax",
+                "secure": False,
+                "session": False,
+                "storeId": "0",
+                "value": "fb.1.1768217293096.854589425594967818"
+            },
+            {
+                "domain": ".orangecarrier.com",
+                "expirationDate": 1769255522,
+                "hostOnly": False,
+                "httpOnly": False,
+                "name": "_gid",
+                "path": "/",
+                "sameSite": "unspecified",
+                "secure": False,
+                "session": False,
+                "storeId": "0",
+                "value": "GA1.2.236214399.1769169118"
+            },
+            {
+                "domain": ".orangecarrier.com",
+                "expirationDate": 1769169178,
+                "hostOnly": False,
+                "httpOnly": False,
+                "name": "_gat_gtag_UA_191466370_1",
+                "path": "/",
+                "sameSite": "unspecified",
+                "secure": False,
+                "session": False,
+                "storeId": "0",
+                "value": "1"
+            },
+            {
+                "domain": "www.orangecarrier.com",
+                "expirationDate": 1769176333.581938,
+                "hostOnly": True,
+                "httpOnly": False,
+                "name": "XSRF-TOKEN",
+                "path": "/",
+                "sameSite": "unspecified",
+                "secure": False,
+                "session": False,
+                "storeId": "0",
+                "value": "eyJpdiI6IjlhOHVyWkRvcUdTQVdTU0RzU3NWWWc9PSIsInZhbHVlIjoiRE42cFVVZ01tckNybTVkQmNRazZKcjhRTkFybWZCdDZTYXZvY2RuNUc2M05cLzdST0d5cEhEeXFYMktNNE9SQVJTSEZSZUpleU1PVm9tYmVVM3ZKVmFualhPalFcLzhqM0tldDVCQjFRUk1PdDFaSXpkaFwvOURyWjdaMW1WV1Q3QysiLCJtYWMiOiI1Yjg1NThmNmZiZjZkZGJmNmUyZmE0MzM3NzIyYTEzMzNkMTczYjAyMmIzYmM5YjczZGMxNWJmNzg3M2E0MzMyIn0%3D"
+            },
+            {
+                "domain": "www.orangecarrier.com",
+                "expirationDate": 1769176333.582121,
+                "hostOnly": True,
+                "httpOnly": True,
+                "name": "orange_carrier_session",
+                "path": "/",
+                "sameSite": "unspecified",
+                "secure": False,
+                "session": False,
+                "storeId": "0",
+                "value": "eyJpdiI6Ino1XC81M0tkUnZDTDBCNmQ4Nkc3QlFRPT0iLCJ2YWx1ZSI6InBXdEY4SmowWEFmYzNGY0NDY21PekhmZjJLSmNwV0NZSXgwY3hmaGhKVWhiQ3c1dXNJUFVuZHN0RHdKNEw3b3JrYmxzMFh0czF0M0xmK0NoNkdUZmkwWFMyMWhNZko3QU5PcFJJODgySEpidUpBeFdTYklZeEM4Q05rbnNNMUtYIiwibWFjIjoiNzU2Zjc3OTZlMjg4ZWUwOWFmNzk0ZTljMTJkOGNlMjQ2ZTkzYzJkMWZmZTVhYTc0MTU1MTAzZTljYjE0NmNhZCJ9"
+            }
+        ]
+        
+        print(f"[🍪] Using default {len(default_cookies)} cookies")
+        return default_cookies
+        
+    except Exception as e:
+        print(f"[❌] Error loading cookies: {e}")
+        return []
+
+def setup_chrome_driver_with_cookies():
+    """Setup Chrome driver and load cookies for authentication"""
+    chrome_options = Options()
+    
+    # Heroku-specific settings
+    is_heroku = os.environ.get('DYNO') is not None
+    
+    if is_heroku:
+        chrome_options.binary_location = os.environ.get('GOOGLE_CHROME_BIN', '/app/.apt/usr/bin/google-chrome')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--window-size=1920,1080')
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+        
+        # Set user agent
+        chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+        
+        # Heroku Chrome path
+        driver_path = os.environ.get('CHROMEDRIVER_PATH', '/app/.chromedriver/bin/chromedriver')
+        print(f"[🔧] Using Chrome binary: {chrome_options.binary_location}")
+        print(f"[🔧] Using Chromedriver: {driver_path}")
+        
+        driver = webdriver.Chrome(
+            executable_path=driver_path,
+            options=chrome_options
+        )
+    else:
+        # Local development
+        chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option('useAutomationExtension', False)
+        
+        driver = webdriver.Chrome(options=chrome_options)
+    
+    # Load cookies
+    cookies = load_cookies_from_config()
+    
+    if cookies:
         try:
-            print(f"[🔄] Refreshing page... (Attempt {retry_count + 1})")
-            driver.refresh()
-            human_like_delay(3, 5)
+            # First navigate to domain to set cookies
+            driver.get("https://www.orangecarrier.com")
+            time.sleep(2)
             
-            # Wait for page to load
-            WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located((By.TAG_NAME, "body"))
-            )
+            # Delete existing cookies
+            driver.delete_all_cookies()
+            time.sleep(1)
             
-            # Check for CAPTCHA immediately after refresh
-            human_like_delay(2, 4)
-            
-            if check_and_solve_captcha(driver):
-                print("[✅] CAPTCHA auto-completed successfully")
-                human_like_delay(5, 8)  # Extra time for CAPTCHA processing
-                
-                # Verify we're past CAPTCHA by checking for main content
+            # Add new cookies
+            for cookie in cookies:
                 try:
-                    WebDriverWait(driver, 15).until(
-                        EC.presence_of_element_located((By.ID, "LiveCalls"))
-                    )
-                    print("[✅] Successfully bypassed CAPTCHA and loaded main content")
-                    return True
-                except TimeoutException:
-                    print("[⚠️] Main content not loaded after CAPTCHA, might need retry")
-                    retry_count += 1
-                    continue
-            else:
-                # No CAPTCHA found, verify main content is loaded
-                try:
-                    WebDriverWait(driver, 15).until(
-                        EC.presence_of_element_located((By.ID, "LiveCalls"))
-                    )
-                    print("[✅] Page refreshed successfully without CAPTCHA")
-                    return True
-                except TimeoutException:
-                    print("[⚠️] Main content not loaded, might have hidden CAPTCHA")
-                    retry_count += 1
-                    continue
+                    # Remove unwanted keys that Selenium doesn't support
+                    cookie_copy = cookie.copy()
                     
+                    # Convert expirationDate from double to integer if needed
+                    if 'expirationDate' in cookie_copy:
+                        cookie_copy['expiry'] = int(cookie_copy['expirationDate'])
+                        del cookie_copy['expirationDate']
+                    
+                    # Remove unsupported keys
+                    unsupported_keys = ['hostOnly', 'storeId', 'sameSite']
+                    for key in unsupported_keys:
+                        if key in cookie_copy:
+                            del cookie_copy[key]
+                    
+                    # Add cookie to driver
+                    driver.add_cookie(cookie_copy)
+                    print(f"[✅] Added cookie: {cookie_copy.get('name')}")
+                    
+                except Exception as e:
+                    print(f"[⚠️] Failed to add cookie {cookie.get('name')}: {e}")
+            
+            # Refresh to apply cookies
+            driver.refresh()
+            time.sleep(3)
+            print(f"[🍪] Successfully loaded {len(cookies)} cookies")
+            
         except Exception as e:
-            print(f"[❌] Refresh attempt {retry_count + 1} failed: {e}")
-            retry_count += 1
-            human_like_delay(5, 10)
+            print(f"[❌] Error setting cookies: {e}")
     
-    print("[💥] All refresh attempts failed")
-    return False
+    driver.set_page_load_timeout(60)
+    return driver
+
+def login_with_cookies(driver):
+    """Login to Orange Carrier using cookies"""
+    try:
+        print("[🔐] Attempting login with cookies...")
+        
+        # Navigate to login page first
+        driver.get(config.LOGIN_URL)
+        time.sleep(3)
+        
+        # Check if we're already logged in
+        current_url = driver.current_url
+        if "dashboard" in current_url or "live/calls" in current_url:
+            print("[✅] Already logged in via cookies!")
+            return True
+        
+        # If not logged in, try to access calls page directly
+        driver.get(config.CALL_URL)
+        time.sleep(3)
+        
+        # Check for login page redirect
+        if "login" in driver.current_url:
+            print("[❌] Cookies expired or invalid")
+            return False
+        
+        # Check for LiveCalls table
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, "LiveCalls"))
+            )
+            print("[✅] Login successful with cookies!")
+            return True
+        except:
+            # Try alternative method - check for any dashboard element
+            page_source = driver.page_source
+            if "Dashboard" in page_source or "Live Calls" in page_source:
+                print("[✅] Login successful (alternative check)!")
+                return True
+            
+            print("[❌] Could not verify login status")
+            return False
+            
+    except Exception as e:
+        print(f"[💥] Cookie login error: {e}")
+        return False
 
 def extract_calls(driver):
     """Extract call information from the calls table"""
@@ -695,185 +700,16 @@ def send_download_failed_to_group(call_info):
     except Exception as e:
         print(f"[❌] Error sending failure message: {e}")
 
-def handle_captcha_protection(sb, url, step_name):
-    """Handle CAPTCHA protection with advanced auto-solving"""
-    print(f"🛡️ CAPTCHA protection check for {step_name}...")
-    
-    try:
-        # Open in UC mode
-        sb.driver.uc_open_with_reconnect(url, reconnect_time=3)
-        human_like_delay(2, 4)
-        
-        # Advanced CAPTCHA check and solve
-        if check_and_solve_captcha(sb.driver):
-            print(f"✅ CAPTCHA auto-completion successful for {step_name}")
-        else:
-            # Fallback to manual click with enhanced detection
-            print(f"[🔧] Using enhanced fallback CAPTCHA handling for {step_name}")
-            try:
-                sb.uc_gui_click_captcha()
-            except:
-                print("[⚠️] Manual CAPTCHA click failed, continuing...")
-        
-        human_like_delay(3, 5)
-        return True
-        
-    except Exception as e:
-        print(f"[❌] CAPTCHA handling error for {step_name}: {e}")
-        return False
-
-def auto_login(driver, email, password):
-    """Automatically login to Orange Carrier"""
-    try:
-        print(f"[🔐] Attempting auto-login for: {email}")
-        
-        # Navigate to login page
-        driver.get(config.LOGIN_URL)
-        human_like_delay(3, 5)
-        
-        # Check for CAPTCHA first
-        if check_and_solve_captcha(driver):
-            print("[✅] CAPTCHA solved before login")
-        
-        # Wait for login form
-        try:
-            WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email'], input[name='email'], #email, input[type='text']"))
-            )
-        except TimeoutException:
-            print("[⚠️] Login form not found, checking if already logged in")
-            if config.LOGIN_URL not in driver.current_url:
-                print("[✅] Already logged in")
-                return True
-        
-        # Find email field
-        email_selectors = [
-            "input[type='email']",
-            "input[name='email']",
-            "#email",
-            "input[placeholder*='email']",
-            "input[placeholder*='Email']",
-            ".email-input",
-            "[type='email']"
-        ]
-        
-        email_field = None
-        for selector in email_selectors:
-            try:
-                email_field = driver.find_element(By.CSS_SELECTOR, selector)
-                if email_field.is_displayed():
-                    break
-            except:
-                continue
-        
-        if email_field:
-            # Enter email with human-like typing
-            email_field.clear()
-            human_like_delay(0.5, 1)
-            for char in email:
-                email_field.send_keys(char)
-                time.sleep(random.uniform(0.05, 0.15))
-            print(f"[📧] Email entered: {email}")
-        
-        # Find password field
-        password_selectors = [
-            "input[type='password']",
-            "input[name='password']",
-            "#password",
-            "input[placeholder*='password']",
-            "input[placeholder*='Password']",
-            ".password-input"
-        ]
-        
-        password_field = None
-        for selector in password_selectors:
-            try:
-                password_field = driver.find_element(By.CSS_SELECTOR, selector)
-                if password_field.is_displayed():
-                    break
-            except:
-                continue
-        
-        if password_field:
-            # Enter password
-            password_field.clear()
-            human_like_delay(0.5, 1)
-            for char in password:
-                password_field.send_keys(char)
-                time.sleep(random.uniform(0.05, 0.15))
-            print("[🔑] Password entered")
-        else:
-            print("[❌] Password field not found")
-            return False
-        
-        # Find submit button
-        submit_selectors = [
-            "button[type='submit']",
-            "input[type='submit']",
-            ".login-button",
-            ".btn-primary",
-            ".btn-login",
-            "button[type='button']",
-            "button"
-        ]
-        
-        submit_button = None
-        for selector in submit_selectors:
-            try:
-                submit_button = driver.find_element(By.CSS_SELECTOR, selector)
-                if submit_button.is_displayed() and submit_button.is_enabled():
-                    break
-            except:
-                continue
-        
-        if submit_button:
-            # Click submit
-            human_like_delay(1, 2)
-            human_like_mouse_movement(driver, submit_button)
-            print("[✅] Login button clicked")
-        else:
-            # Try pressing Enter
-            if password_field:
-                password_field.send_keys(Keys.RETURN)
-                print("[↵️] Sent Enter key to password field")
-        
-        # Wait for login to complete
-        human_like_delay(5, 8)
-        
-        # Check if login was successful
-        current_url = driver.current_url
-        if config.LOGIN_URL not in current_url and "login" not in current_url.lower():
-            print("[🎉] Login successful!")
-            
-            # Wait for dashboard to load
-            try:
-                WebDriverWait(driver, 20).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, 
-                        "#dashboard, #LiveCalls, .dashboard, .main-content, body"))
-                )
-                print("[✅] Dashboard loaded successfully")
-                return True
-            except:
-                # Try to navigate to calls page directly
-                driver.get(config.CALL_URL)
-                human_like_delay(5, 8)
-                return True
-        else:
-            print("[❌] Login failed - still on login page")
-            return False
-            
-    except Exception as e:
-        print(f"[💥] Auto-login error: {e}")
-        return False
-
 def check_login_status(driver):
     """Check if user is still logged in"""
     try:
+        # Check current URL
+        if "login" in driver.current_url:
+            return False
+        
         # Check for logout button or user profile
         logout_indicators = [
             "a[href*='logout']",
-            "button:contains('Logout')",
-            "a:contains('Logout')",
             ".user-profile",
             ".account-menu"
         ]
@@ -884,10 +720,6 @@ def check_login_status(driver):
                     return True
             except:
                 continue
-        
-        # Check current URL
-        if config.LOGIN_URL in driver.current_url:
-            return False
         
         # Check for login form elements
         login_form_elements = ["input[type='email']", "input[type='password']", "#login-form"]
@@ -903,151 +735,159 @@ def check_login_status(driver):
     except:
         return False
 
-def wait_for_login(sb):
-    """Wait for login - try auto-login first, then manual fallback"""
-    
-    # First try auto-login if credentials are provided
-    if hasattr(config, 'ORANGE_EMAIL') and hasattr(config, 'ORANGE_PASSWORD'):
-        if config.ORANGE_EMAIL and config.ORANGE_PASSWORD:
-            print(f"[🤖] Attempting auto-login for: {config.ORANGE_EMAIL}")
-            
-            # Navigate to login page with CAPTCHA handling
-            handle_captcha_protection(sb, config.LOGIN_URL, "Login Page")
-            
-            # Try auto-login
-            if auto_login(sb.driver, config.ORANGE_EMAIL, config.ORANGE_PASSWORD):
-                print("[✅] Auto-login successful!")
-                
-                # Verify we're on calls page
-                handle_captcha_protection(sb, config.CALL_URL, "Calls Page")
-                
-                try:
-                    WebDriverWait(sb.driver, 20).until(
-                        EC.presence_of_element_located((By.ID, "LiveCalls"))
-                    )
-                    return True
-                except:
-                    # Try to navigate directly
-                    sb.driver.get(config.CALL_URL)
-                    human_like_delay(5, 8)
-                    return True
-            else:
-                print("[⚠️] Auto-login failed, falling back to manual login")
-    
-    # Fallback to manual login
-    print(f"[👤] Manual login required: {config.LOGIN_URL}")
-    handle_captcha_protection(sb, config.LOGIN_URL, "Login Page")
-    print("➡️ Please login manually in the browser...")
-    
+def refresh_with_cookies(driver):
+    """Refresh page and re-apply cookies if needed"""
     try:
-        WebDriverWait(sb.driver, 300).until(  # 5 minutes timeout
-            lambda d: d.current_url.startswith(config.BASE_URL) and 
-                     not d.current_url.startswith(config.LOGIN_URL) and
-                     "login" not in d.current_url.lower()
-        )
-        print("✅ Manual login successful!")
+        print("[🔄] Refreshing page...")
+        driver.refresh()
+        time.sleep(5)
+        
+        # Check if we got logged out
+        if not check_login_status(driver):
+            print("[⚠️] Session expired, re-applying cookies...")
+            # Re-apply cookies
+            cookies = load_cookies_from_config()
+            if cookies:
+                driver.delete_all_cookies()
+                for cookie in cookies:
+                    try:
+                        cookie_copy = cookie.copy()
+                        if 'expirationDate' in cookie_copy:
+                            cookie_copy['expiry'] = int(cookie_copy['expirationDate'])
+                            del cookie_copy['expirationDate']
+                        
+                        unsupported_keys = ['hostOnly', 'storeId', 'sameSite']
+                        for key in unsupported_keys:
+                            if key in cookie_copy:
+                                del cookie_copy[key]
+                        
+                        driver.add_cookie(cookie_copy)
+                    except:
+                        continue
+                
+                driver.refresh()
+                time.sleep(5)
+        
         return True
-    except TimeoutException:
-        print("[❌] Login timeout")
+        
+    except Exception as e:
+        print(f"[❌] Refresh error: {e}")
         return False
 
 def main():
-    # Detect if running on Heroku
-    is_heroku = os.environ.get('DYNO') is not None
+    print("[🚀] Starting Orange Carrier Monitor with Cookies...")
     
-    # FIXED: Only use parameters that SB() constructor supports
-    sb_config = {
-        'uc': True,
-        'incognito': True,
-        'agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        'headless': is_heroku,     # Headless on Heroku
-        'headless2': is_heroku,    # Headless2 on Heroku
-    }
-    
-    print(f"[🌍] Running on Heroku: {is_heroku}")
-    print(f"[⚙️] SeleniumBase config: {sb_config}")
-    
-    with SB(**sb_config) as sb:
-        try:
-            # Increase timeout for Heroku
-            sb.driver.set_page_load_timeout(60)
-            sb.driver.set_script_timeout(60)
+    driver = None
+    try:
+        # Setup Chrome driver with cookies
+        driver = setup_chrome_driver_with_cookies()
+        
+        # Login with cookies
+        if not login_with_cookies(driver):
+            print("[❌] Cookie login failed, attempting manual login...")
             
-            # Set Chrome options for Heroku
-            if is_heroku:
-                options = sb.driver.options
-                options.add_argument('--no-sandbox')
-                options.add_argument('--disable-dev-shm-usage')
-                options.add_argument('--disable-gpu')
-                options.add_argument('--headless')
-                options.add_argument('--disable-blink-features=AutomationControlled')
-                options.add_experimental_option("excludeSwitches", ["enable-automation"])
-                options.add_experimental_option('useAutomationExtension', False)
-                print("[⚙️] Chrome options set for Heroku")
+            # Fallback to manual login
+            print("[👤] Please login manually in the browser...")
+            driver.get(config.LOGIN_URL)
+            time.sleep(5)
             
-            if not wait_for_login(sb):
+            # Wait for manual login
+            login_wait = 300  # 5 minutes
+            login_complete = False
+            
+            for i in range(login_wait):
+                current_url = driver.current_url
+                if "live/calls" in current_url or "dashboard" in current_url:
+                    print("[✅] Manual login successful!")
+                    login_complete = True
+                    break
+                time.sleep(1)
+            
+            if not login_complete:
+                print("[❌] Manual login timeout")
                 return
-            
-            handle_captcha_protection(sb, config.CALL_URL, "Calls Page")
-            WebDriverWait(sb.driver, 30).until(EC.presence_of_element_located((By.ID, "LiveCalls")))
-            print("✅ Active Calls page loaded!")
-            print("[*] Real-time monitoring started...")
-
-            error_count = 0
-            last_refresh = datetime.now()
-            next_refresh_interval = get_next_refresh_time()
-            
-            while error_count < config.MAX_ERRORS:
-                try:
-                    # Dynamic refresh based on the specified pattern
-                    current_time = datetime.now()
-                    if (current_time - last_refresh).total_seconds() > next_refresh_interval:
-                        print(f"[🔄] Scheduled refresh triggered after {next_refresh_interval} seconds")
-                        
-                        if safe_refresh_with_advanced_captcha(sb.driver):
-                            # Wait for LiveCalls table
-                            WebDriverWait(sb.driver, 30).until(
+        
+        # Navigate to calls page
+        print(f"[📞] Opening calls page: {config.CALL_URL}")
+        driver.get(config.CALL_URL)
+        time.sleep(10)
+        
+        # Wait for LiveCalls table
+        try:
+            WebDriverWait(driver, 30).until(
+                EC.presence_of_element_located((By.ID, "LiveCalls"))
+            )
+            print("[✅] Active Calls page loaded!")
+        except:
+            print("[⚠️] LiveCalls table not found, trying to find it...")
+            # Try alternative selectors
+            try:
+                WebDriverWait(driver, 15).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "table"))
+                )
+                print("[✅] Found a table, continuing...")
+            except:
+                print("[❌] No table found, but continuing anyway...")
+        
+        print("[🚀] Real-time monitoring started...")
+        
+        error_count = 0
+        last_refresh = datetime.now()
+        next_refresh_interval = get_next_refresh_time()
+        
+        while error_count < config.MAX_ERRORS:
+            try:
+                # Dynamic refresh based on the specified pattern
+                current_time = datetime.now()
+                if (current_time - last_refresh).total_seconds() > next_refresh_interval:
+                    print(f"[🔄] Scheduled refresh triggered after {next_refresh_interval} seconds")
+                    
+                    if refresh_with_cookies(driver):
+                        # Wait for LiveCalls table
+                        try:
+                            WebDriverWait(driver, 30).until(
                                 EC.presence_of_element_located((By.ID, "LiveCalls"))
                             )
                             last_refresh = current_time
                             next_refresh_interval = get_next_refresh_time()
                             print(f"[✅] Page refreshed successfully at {current_time.strftime('%H:%M:%S')}")
-                        else:
-                            print("[❌] Page refresh failed, trying to recover...")
-                            handle_captcha_protection(sb, config.CALL_URL, "Recovery Refresh")
-                            next_refresh_interval = REFRESH_PATTERN[0]  # Use first interval on failure
-                    
-                    # Check if still logged in
-                    if config.LOGIN_URL in sb.driver.current_url or not check_login_status(sb.driver):
-                        print("[⚠️] Session expired, re-logging in")
-                        if not wait_for_login(sb):
-                            break
-                        handle_captcha_protection(sb, config.CALL_URL, "Re-login Calls Page")
-                    
-                    # Extract calls
-                    extract_calls(sb.driver)
-                    
-                    error_count = 0
-                    time.sleep(config.CHECK_INTERVAL)
-                    
-                except KeyboardInterrupt:
-                    print("\n[🛑] Stopped by user")
-                    break
-                except Exception as e:
-                    error_count += 1
-                    print(f"[❌] Main loop error ({error_count}/{config.MAX_ERRORS}): {e}")
-                    
-                    # Enhanced CAPTCHA-related error handling
-                    error_str = str(e).lower()
-                    if any(keyword in error_str for keyword in ["captcha", "cloudflare", "challenge", "security", "verification"]):
-                        print("[🛡️] CAPTCHA-related error detected, attempting advanced recovery...")
-                        handle_captcha_protection(sb, sb.driver.current_url, "Error Recovery")
-                        human_like_delay(10, 15)  # Longer delay after CAPTCHA recovery
-                    
-                    time.sleep(5)
-                    
-        except Exception as e:
-            print(f"[💥] Fatal error: {e}")
+                        except:
+                            print("[⚠️] LiveCalls table not loaded after refresh, but continuing...")
+                            last_refresh = current_time
+                            next_refresh_interval = get_next_refresh_time()
+                    else:
+                        print("[❌] Page refresh failed")
+                        next_refresh_interval = REFRESH_PATTERN[0]  # Use first interval on failure
+                
+                # Check if still logged in
+                if not check_login_status(driver):
+                    print("[⚠️] Session expired, attempting to re-login with cookies...")
+                    if not login_with_cookies(driver):
+                        print("[❌] Re-login failed")
+                        error_count += 1
+                        time.sleep(10)
+                        continue
+                
+                # Extract calls
+                extract_calls(driver)
+                
+                error_count = 0
+                time.sleep(config.CHECK_INTERVAL)
+                
+            except KeyboardInterrupt:
+                print("\n[🛑] Stopped by user")
+                break
+            except Exception as e:
+                error_count += 1
+                print(f"[❌] Main loop error ({error_count}/{config.MAX_ERRORS}): {e}")
+                time.sleep(5)
+                
+    except Exception as e:
+        print(f"[💥] Fatal error: {e}")
+    finally:
+        if driver:
+            print("[👋] Closing browser...")
+            driver.quit()
     
     print("[*] Monitoring stopped")
 
