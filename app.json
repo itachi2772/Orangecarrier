@@ -1,9 +1,9 @@
 {
   "name": "OrangeCarrier Monitor",
-  "description": "Real-time call monitoring system for Orange Carrier with auto-login",
-  "repository": "https://github.com/Akash8t2/Orangecarrier",
+  "description": "Real-time call monitoring system",
+  "repository": "https://github.com/YOUR_USERNAME/ORANGE_MONITOR",
   "logo": "https://img.icons8.com/color/96/000000/orange.png",
-  "keywords": ["python", "selenium", "telegram", "monitoring", "auto-login"],
+  "keywords": ["python", "selenium", "telegram", "monitoring"],
   "env": {
     "BOT_TOKEN": {
       "description": "Telegram Bot Token from @BotFather",
@@ -11,17 +11,17 @@
       "required": true
     },
     "ADMIN_CHAT_ID": {
-      "description": "Admin Telegram Chat ID (get from @userinfobot)",
+      "description": "Admin Telegram Chat ID",
       "value": "",
       "required": true
     },
     "GROUP_CHAT_ID": {
-      "description": "Group Telegram Chat ID (for notifications)",
+      "description": "Group Telegram Chat ID",
       "value": "",
       "required": false
     },
     "ORANGE_EMAIL": {
-      "description": "Orange Carrier Email/Username",
+      "description": "Orange Carrier Email",
       "value": "",
       "required": true
     },
@@ -44,21 +44,6 @@
       "description": "Orange Carrier Base URL",
       "value": "https://www.orangecarrier.com",
       "required": true
-    },
-    "MAX_ERRORS": {
-      "description": "Maximum consecutive errors before restart",
-      "value": "10",
-      "required": false
-    },
-    "CHECK_INTERVAL": {
-      "description": "Check interval in seconds",
-      "value": "5",
-      "required": false
-    },
-    "REFRESH_PATTERN": {
-      "description": "Refresh pattern in seconds (JSON array)",
-      "value": "[1800, 1545, 2110, 1850, 1340]",
-      "required": false
     }
   },
   "formation": {
@@ -68,9 +53,6 @@
     }
   },
   "buildpacks": [
-    {
-      "url": "https://github.com/heroku/heroku-buildpack-apt"
-    },
     {
       "url": "heroku/python"
     }
