@@ -1,31 +1,80 @@
 {
-  "name": "orange-carrier-bot",
-  "description": "Orange Carrier multi-account CDR fetcher + Telegram bot",
-  "repository": "https://github.com/Akash8t2/orangecarrier",
-  "keywords": ["python", "telegram", "orange-carrier", "cdr"],
+  "name": "OrangeCarrier Monitor",
+  "description": "Real-time call monitoring system for Orange Carrier with auto-login",
+  "repository": "https://github.com/YOUR_USERNAME/ORANGE_MONITOR",
+  "logo": "https://img.icons8.com/color/96/000000/orange.png",
+  "keywords": ["python", "selenium", "telegram", "monitoring", "auto-login"],
   "env": {
     "BOT_TOKEN": {
-      "description": "Your Telegram Bot Token",
-      "value": ""
+      "description": "Telegram Bot Token from @BotFather",
+      "value": "",
+      "required": true
     },
-    "CHAT_ID": {
-      "description": "Telegram Chat/Group ID (e.g. -100123456789)",
-      "value": ""
+    "ADMIN_CHAT_ID": {
+      "description": "Admin Telegram Chat ID (get from @userinfobot)",
+      "value": "",
+      "required": true
     },
-    "ACCOUNTS": {
-      "description": "List of Orange Carrier accounts in JSON format",
-      "value": "[{\"email\":\"user1@example.com\",\"password\":\"pass1\"},{\"email\":\"user2@example.com\",\"password\":\"pass2\"}]"
+    "GROUP_CHAT_ID": {
+      "description": "Group Telegram Chat ID (for notifications)",
+      "value": "",
+      "required": false
+    },
+    "ORANGE_EMAIL": {
+      "description": "Orange Carrier Email/Username",
+      "value": "",
+      "required": true
+    },
+    "ORANGE_PASSWORD": {
+      "description": "Orange Carrier Password",
+      "value": "",
+      "required": true
+    },
+    "LOGIN_URL": {
+      "description": "Orange Carrier Login URL",
+      "value": "https://www.orangecarrier.com/login",
+      "required": true
+    },
+    "CALL_URL": {
+      "description": "Orange Carrier Calls Page URL",
+      "value": "https://www.orangecarrier.com/live/calls",
+      "required": true
+    },
+    "BASE_URL": {
+      "description": "Orange Carrier Base URL",
+      "value": "https://www.orangecarrier.com",
+      "required": true
+    },
+    "MAX_ERRORS": {
+      "description": "Maximum consecutive errors before restart",
+      "value": "10",
+      "required": false
+    },
+    "CHECK_INTERVAL": {
+      "description": "Check interval in seconds",
+      "value": "5",
+      "required": false
+    },
+    "REFRESH_PATTERN": {
+      "description": "Refresh pattern in seconds (JSON array)",
+      "value": "[1800, 1545, 2110, 1850, 1340]",
+      "required": false
     }
   },
   "formation": {
     "worker": {
       "quantity": 1,
-      "size": "Basic"
+      "size": "eco"
     }
   },
   "buildpacks": [
     {
+      "url": "https://github.com/heroku/heroku-buildpack-apt"
+    },
+    {
       "url": "heroku/python"
     }
-  ]
+  ],
+  "addons": [],
+  "stack": "heroku-22"
 }
