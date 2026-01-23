@@ -1,7 +1,7 @@
 {
   "name": "OrangeCarrier Monitor",
   "description": "Real-time call monitoring system for Orange Carrier with auto-login",
-  "repository": "https://github.com/YOUR_USERNAME/ORANGE_MONITOR",
+  "repository": "https://github.com/Akash8t2/Orangecarrier",
   "logo": "https://img.icons8.com/color/96/000000/orange.png",
   "keywords": ["python", "selenium", "telegram", "monitoring", "auto-login"],
   "env": {
