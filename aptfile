@@ -1,2 +1,10 @@
-https://github.com/heroku/heroku-buildpack-google-chrome
-https://github.com/heroku/heroku-buildpack-chromedriver
+# Aptfile content
+google-chrome-stable
+chromedriver
+libnss3
+libgconf-2-4
+libxss1
+libappindicator1
+fonts-liberation
+xdg-utils
+wget
