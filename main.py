@@ -955,6 +955,7 @@ def main():
     # Detect if running on Heroku
     is_heroku = os.environ.get('DYNO') is not None
     
+    # FIXED: Remove unsupported parameters from SB() constructor
     sb_config = {
         'uc': True,
         'incognito': True,
@@ -962,22 +963,33 @@ def main():
         'agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         'ad_block_on': True,
         'block_images': True,
-        'disable_gpu': is_heroku,  # Disable GPU on Heroku
         'headless': is_heroku,     # Headless on Heroku
         'headless2': is_heroku,    # Headless2 on Heroku
-        'xvfb': is_heroku,         # Xvfb on Heroku
-        'no_sandbox': is_heroku,   # No sandbox on Heroku
-        'disable_dev_shm_usage': is_heroku,  # Fix for Heroku memory
+        'no_sandbox': True,        # Important for Heroku
+        'disable_dev_shm_usage': False,  # REMOVED: Not supported in SB()
+        'disable_gpu': False,      # REMOVED: Not supported in SB()
+        'xvfb': False,             # REMOVED: Not supported in SB()
     }
     
     print(f"[🌍] Running on Heroku: {is_heroku}")
-    print(f"[⚙️] SeleniumBase config: {sb_config}")
     
     with SB(**sb_config) as sb:
         try:
             # Increase timeout for Heroku
             sb.driver.set_page_load_timeout(60)
             sb.driver.set_script_timeout(60)
+            
+            # Set Chrome options manually for Heroku
+            if is_heroku:
+                options = sb.driver.options
+                options.add_argument('--no-sandbox')
+                options.add_argument('--disable-dev-shm-usage')
+                options.add_argument('--disable-gpu')
+                options.add_argument('--headless')
+                options.add_argument('--disable-blink-features=AutomationControlled')
+                options.add_experimental_option("excludeSwitches", ["enable-automation"])
+                options.add_experimental_option('useAutomationExtension', False)
+                print("[⚙️] Chrome options set for Heroku")
             
             if not wait_for_login(sb):
                 return
