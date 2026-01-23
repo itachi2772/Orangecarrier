@@ -955,23 +955,17 @@ def main():
     # Detect if running on Heroku
     is_heroku = os.environ.get('DYNO') is not None
     
-    # FIXED: Remove unsupported parameters from SB() constructor
+    # FIXED: Only use parameters that SB() constructor supports
     sb_config = {
         'uc': True,
         'incognito': True,
-        'disable_csp': True,
         'agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        'ad_block_on': True,
-        'block_images': True,
         'headless': is_heroku,     # Headless on Heroku
         'headless2': is_heroku,    # Headless2 on Heroku
-        'no_sandbox': True,        # Important for Heroku
-        'disable_dev_shm_usage': False,  # REMOVED: Not supported in SB()
-        'disable_gpu': False,      # REMOVED: Not supported in SB()
-        'xvfb': False,             # REMOVED: Not supported in SB()
     }
     
     print(f"[🌍] Running on Heroku: {is_heroku}")
+    print(f"[⚙️] SeleniumBase config: {sb_config}")
     
     with SB(**sb_config) as sb:
         try:
@@ -979,7 +973,7 @@ def main():
             sb.driver.set_page_load_timeout(60)
             sb.driver.set_script_timeout(60)
             
-            # Set Chrome options manually for Heroku
+            # Set Chrome options for Heroku
             if is_heroku:
                 options = sb.driver.options
                 options.add_argument('--no-sandbox')
