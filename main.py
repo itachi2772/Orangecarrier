@@ -3,6 +3,7 @@ import re
 import requests
 import os
 import random
+import json
 from datetime import datetime, timedelta
 from seleniumbase import SB
 from selenium.webdriver.common.by import By
@@ -721,17 +722,230 @@ def handle_captcha_protection(sb, url, step_name):
         print(f"[❌] CAPTCHA handling error for {step_name}: {e}")
         return False
 
+def auto_login(driver, email, password):
+    """Automatically login to Orange Carrier"""
+    try:
+        print(f"[🔐] Attempting auto-login for: {email}")
+        
+        # Navigate to login page
+        driver.get(config.LOGIN_URL)
+        human_like_delay(3, 5)
+        
+        # Check for CAPTCHA first
+        if check_and_solve_captcha(driver):
+            print("[✅] CAPTCHA solved before login")
+        
+        # Wait for login form
+        try:
+            WebDriverWait(driver, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='email'], input[name='email'], #email, input[type='text']"))
+            )
+        except TimeoutException:
+            print("[⚠️] Login form not found, checking if already logged in")
+            if config.LOGIN_URL not in driver.current_url:
+                print("[✅] Already logged in")
+                return True
+        
+        # Find email field
+        email_selectors = [
+            "input[type='email']",
+            "input[name='email']",
+            "#email",
+            "input[placeholder*='email']",
+            "input[placeholder*='Email']",
+            ".email-input",
+            "[type='email']"
+        ]
+        
+        email_field = None
+        for selector in email_selectors:
+            try:
+                email_field = driver.find_element(By.CSS_SELECTOR, selector)
+                if email_field.is_displayed():
+                    break
+            except:
+                continue
+        
+        if email_field:
+            # Enter email with human-like typing
+            email_field.clear()
+            human_like_delay(0.5, 1)
+            for char in email:
+                email_field.send_keys(char)
+                time.sleep(random.uniform(0.05, 0.15))
+            print(f"[📧] Email entered: {email}")
+        
+        # Find password field
+        password_selectors = [
+            "input[type='password']",
+            "input[name='password']",
+            "#password",
+            "input[placeholder*='password']",
+            "input[placeholder*='Password']",
+            ".password-input"
+        ]
+        
+        password_field = None
+        for selector in password_selectors:
+            try:
+                password_field = driver.find_element(By.CSS_SELECTOR, selector)
+                if password_field.is_displayed():
+                    break
+            except:
+                continue
+        
+        if password_field:
+            # Enter password
+            password_field.clear()
+            human_like_delay(0.5, 1)
+            for char in password:
+                password_field.send_keys(char)
+                time.sleep(random.uniform(0.05, 0.15))
+            print("[🔑] Password entered")
+        else:
+            print("[❌] Password field not found")
+            return False
+        
+        # Find submit button
+        submit_selectors = [
+            "button[type='submit']",
+            "input[type='submit']",
+            ".login-button",
+            ".btn-primary",
+            ".btn-login",
+            "button[type='button']",
+            "button"
+        ]
+        
+        submit_button = None
+        for selector in submit_selectors:
+            try:
+                submit_button = driver.find_element(By.CSS_SELECTOR, selector)
+                if submit_button.is_displayed() and submit_button.is_enabled():
+                    break
+            except:
+                continue
+        
+        if submit_button:
+            # Click submit
+            human_like_delay(1, 2)
+            human_like_mouse_movement(driver, submit_button)
+            print("[✅] Login button clicked")
+        else:
+            # Try pressing Enter
+            if password_field:
+                password_field.send_keys(Keys.RETURN)
+                print("[↵️] Sent Enter key to password field")
+        
+        # Wait for login to complete
+        human_like_delay(5, 8)
+        
+        # Check if login was successful
+        current_url = driver.current_url
+        if config.LOGIN_URL not in current_url and "login" not in current_url.lower():
+            print("[🎉] Login successful!")
+            
+            # Wait for dashboard to load
+            try:
+                WebDriverWait(driver, 20).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, 
+                        "#dashboard, #LiveCalls, .dashboard, .main-content, body"))
+                )
+                print("[✅] Dashboard loaded successfully")
+                return True
+            except:
+                # Try to navigate to calls page directly
+                driver.get(config.CALL_URL)
+                human_like_delay(5, 8)
+                return True
+        else:
+            print("[❌] Login failed - still on login page")
+            return False
+            
+    except Exception as e:
+        print(f"[💥] Auto-login error: {e}")
+        return False
+
+def check_login_status(driver):
+    """Check if user is still logged in"""
+    try:
+        # Check for logout button or user profile
+        logout_indicators = [
+            "a[href*='logout']",
+            "button:contains('Logout')",
+            "a:contains('Logout')",
+            ".user-profile",
+            ".account-menu"
+        ]
+        
+        for selector in logout_indicators:
+            try:
+                if driver.find_elements(By.CSS_SELECTOR, selector):
+                    return True
+            except:
+                continue
+        
+        # Check current URL
+        if config.LOGIN_URL in driver.current_url:
+            return False
+        
+        # Check for login form elements
+        login_form_elements = ["input[type='email']", "input[type='password']", "#login-form"]
+        for selector in login_form_elements:
+            try:
+                if driver.find_elements(By.CSS_SELECTOR, selector):
+                    return False
+            except:
+                continue
+        
+        return True
+        
+    except:
+        return False
+
 def wait_for_login(sb):
-    """Wait for manual login"""
-    print(f"🔐 Login page: {config.LOGIN_URL}")
+    """Wait for login - try auto-login first, then manual fallback"""
+    
+    # First try auto-login if credentials are provided
+    if hasattr(config, 'ORANGE_EMAIL') and hasattr(config, 'ORANGE_PASSWORD'):
+        if config.ORANGE_EMAIL and config.ORANGE_PASSWORD:
+            print(f"[🤖] Attempting auto-login for: {config.ORANGE_EMAIL}")
+            
+            # Navigate to login page with CAPTCHA handling
+            handle_captcha_protection(sb, config.LOGIN_URL, "Login Page")
+            
+            # Try auto-login
+            if auto_login(sb.driver, config.ORANGE_EMAIL, config.ORANGE_PASSWORD):
+                print("[✅] Auto-login successful!")
+                
+                # Verify we're on calls page
+                handle_captcha_protection(sb, config.CALL_URL, "Calls Page")
+                
+                try:
+                    WebDriverWait(sb.driver, 20).until(
+                        EC.presence_of_element_located((By.ID, "LiveCalls"))
+                    )
+                    return True
+                except:
+                    # Try to navigate directly
+                    sb.driver.get(config.CALL_URL)
+                    human_like_delay(5, 8)
+                    return True
+            else:
+                print("[⚠️] Auto-login failed, falling back to manual login")
+    
+    # Fallback to manual login
+    print(f"[👤] Manual login required: {config.LOGIN_URL}")
     handle_captcha_protection(sb, config.LOGIN_URL, "Login Page")
     print("➡️ Please login manually in the browser...")
     
     try:
-        WebDriverWait(sb.driver, 600).until(
-            lambda d: d.current_url.startswith(config.BASE_URL) and not d.current_url.startswith(config.LOGIN_URL)
+        WebDriverWait(sb.driver, 300).until(  # 5 minutes timeout
+            lambda d: d.current_url.startswith(config.BASE_URL) and 
+                     not d.current_url.startswith(config.LOGIN_URL) and
+                     "login" not in d.current_url.lower()
         )
-        print("✅ Login successful!")
+        print("✅ Manual login successful!")
         return True
     except TimeoutException:
         print("[❌] Login timeout")
@@ -798,7 +1012,7 @@ def main():
                             next_refresh_interval = REFRESH_PATTERN[0]  # Use first interval on failure
                     
                     # Check if still logged in
-                    if config.LOGIN_URL in sb.driver.current_url:
+                    if config.LOGIN_URL in sb.driver.current_url or not check_login_status(sb.driver):
                         print("[⚠️] Session expired, re-logging in")
                         if not wait_for_login(sb):
                             break
