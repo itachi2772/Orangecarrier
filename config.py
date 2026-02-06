@@ -6,7 +6,7 @@ IS_HEROKU = os.environ.get('DYNO') is not None
 
 if IS_HEROKU:
     # Heroku config
-    BOT_TOKEN = os.environ.get('8260893223:AAGBXPGLOITT8ga68BgiWh72hJLLCkxfjVE', '')
+    BOT_TOKEN = os.environ.get('', '')
     ADMIN_CHAT_ID = os.environ.get('ADMIN_CHAT_ID', '')
     GROUP_CHAT_ID = os.environ.get('GROUP_CHAT_ID', '')
     
