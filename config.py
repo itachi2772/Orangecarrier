@@ -6,7 +6,7 @@ IS_HEROKU = os.environ.get('DYNO') is not None
 
 if IS_HEROKU:
     # Heroku config
-    BOT_TOKEN = os.environ.get('BOT_TOKEN', '')
+    BOT_TOKEN = os.environ.get('8260893223:AAGBXPGLOITT8ga68BgiWh72hJLLCkxfjVE', '')
     ADMIN_CHAT_ID = os.environ.get('ADMIN_CHAT_ID', '')
     GROUP_CHAT_ID = os.environ.get('GROUP_CHAT_ID', '')
     
@@ -30,12 +30,12 @@ if IS_HEROKU:
 else:
     # Local development Configuration
     BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE'
-    ADMIN_CHAT_ID = 'YOUR_ADMIN_CHAT_ID_HERE'
-    GROUP_CHAT_ID = 'YOUR_GROUP_CHAT_ID_HERE'
+    ADMIN_CHAT_ID = '8574635657, 8365902294'
+    GROUP_CHAT_ID = '-1003811715050'
     
     # Orange Carrier Login Credentials
-    ORANGE_EMAIL = 'your_email@orangecarrier.com'
-    ORANGE_PASSWORD = 'your_password_here'
+    ORANGE_EMAIL = 'maxcreate011@gmail.com'
+    ORANGE_PASSWORD = 'WIZARD@23A'
     
     # URLs
     LOGIN_URL = 'https://www.orangecarrier.com/login'
